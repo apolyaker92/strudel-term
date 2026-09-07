@@ -50,6 +50,8 @@ ctrl-s         save and evaluate now
 ctrl-z         undo
 shift+arrows   select
 ctrl-w         delete word
+ctrl-p         play/pause, without leaving insert
+ctrl-o         scope on/off
 ctrl-g         reference pages
 esc            command mode
 ```

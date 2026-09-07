@@ -1,9 +1,10 @@
 // Buffer and key-parsing tests. No audio, no TTY.
 import assert from 'node:assert/strict';
 import { Editor, parseKeys } from '../src/editor.mjs';
-import { writeSync, mkdtempSync, mkdirSync, writeFileSync, existsSync, utimesSync, rmSync } from 'node:fs';
+import { writeSync, mkdtempSync, mkdirSync, writeFileSync, existsSync, utimesSync, rmSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+import { fileURLToPath } from 'node:url';
 import { cacheSize, clearCache, CACHE_DIR } from '../src/samples.mjs';
 
 let passed = 0;
@@ -2504,6 +2505,42 @@ test('a continuous signal does not take the roll down', () => {
   // and the real note beside it is still drawn
   assert.ok(rows.some((r) => r.includes('█')), 'the pitched note survived');
 });
+
+// --- the files we ship ---
+//
+// Two broken examples shipped today: first.str ended in an uncalled .rev, and
+// course/05 had its transform deleted leaving `.every(4, ))`. Both parse-level
+// or event-level failures a reader would hit immediately, and neither was
+// caught by anything. Now they are.
+const exampleDir = fileURLToPath(new URL('../examples', import.meta.url));
+const exampleFiles = [
+  ...readdirSync(exampleDir).filter((f) => f.endsWith('.str')).map((f) => join(exampleDir, f)),
+  ...readdirSync(join(exampleDir, 'course'))
+    .filter((f) => f.endsWith('.str'))
+    .map((f) => join(exampleDir, 'course', f)),
+];
+
+test('there are examples to check', () => {
+  assert.ok(exampleFiles.length >= 7, `found ${exampleFiles.length}`);
+});
+
+for (const file of exampleFiles) {
+  const name = file.slice(exampleDir.length + 1);
+  await test(`example ${name} runs`, async () => {
+    const { Engine } = await import('../src/engine.mjs');
+    const engine = new Engine();
+    const error = await engine.setCode(readFileSync(file, 'utf8'), { quiet: true });
+    assert.equal(error ?? null, null, `does not evaluate: ${error}`);
+
+    const haps = engine.pattern.queryArc(0, 2).filter((h) => h.whole);
+    assert.ok(haps.length > 0, 'evaluates but produces no events');
+
+    // a value that is not an object is what superdough refuses to play, and is
+    // exactly what an uncalled transform leaves behind
+    const unplayable = haps.filter((h) => typeof h.value !== 'object' || h.value === null);
+    assert.equal(unplayable.length, 0, `${unplayable.length} events superdough cannot play`);
+  });
+}
 
 await Promise.all(pending);
 

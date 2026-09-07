@@ -10,7 +10,7 @@ stack(
   note("c4 eb4 g4 bb4")
     .sound("triangle")
     .gain(0.3)
-    .every(4, ))      // every 4th cycle, play it backwards
+    .every(4, rev)      // every 4th cycle, play it backwards
     .jux(rev)           // and pan a reversed copy to the other ear
 )
 
