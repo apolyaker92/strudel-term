@@ -8,7 +8,19 @@ engine and audio output all run in Node.
 
 ## Install
 
-Needs Node 22 or newer, and macOS or Linux with working audio.
+Needs macOS or Linux with working audio.
+
+```
+brew tap apolyaker92/tap
+brew trust apolyaker92/tap
+brew install strudel-term
+```
+
+Homebrew 6 refuses to load formulae from third-party taps until you trust them,
+so the middle line is not optional: without it the install fails with "invalid
+formula" and no obvious cause.
+
+From source instead, which needs Node 22 or newer:
 
 ```
 git clone https://github.com/apolyaker92/strudel-term
