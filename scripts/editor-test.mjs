@@ -2406,6 +2406,85 @@ test('the modifiers stay mutually distinguishable', () => {
   assert.deepEqual(flags('\x1b[1;9A'), { shift: false, alt: false, ctrl: false, cmd: true });
 });
 
+// --- audio module, without a device ---
+//
+// initAudio needs a sound card, but everything that reports on a context this
+// process has not opened is testable, and those are exactly the paths that run
+// under --silent.
+const audio = await import('../src/audio.mjs');
+
+test('the audio module answers safely before a context exists', () => {
+  assert.deepEqual(audio.busEffectNames(), [], 'no bus until one is built');
+  assert.equal(audio.setBusEffect('flanger', 1), false, 'refuses rather than throwing');
+  assert.equal(audio.setBusParam('flanger', 'rate', 2), false);
+  assert.equal(typeof audio.contextState(), 'string');
+  // null, not a throw: the scope renderer takes a missing buffer and draws the
+  // zero line, which is what --silent shows
+  assert.equal(audio.waveform(), null);
+  assert.deepEqual(renderWaveform({ data: audio.waveform(), width: 40, height: 4 }).length, 4);
+});
+
+test('render stats are shaped the same with or without a context', () => {
+  const stats = audio.renderStats();
+  assert.equal(typeof stats, 'object');
+  assert.ok(stats !== null);
+});
+
+// --- captured console ---
+//
+// Left until last: this module hijacks console on import and releaseConsole is
+// one way, so anything after it would print over the alternate screen.
+const logcapture = await import('../src/logcapture.mjs');
+
+test('a strudel log line loses its CSS argument', () => {
+  console.log('%chello there', 'background-color: #222; color: white');
+  const last = logcapture.allLogs().at(-1);
+  assert.equal(last.text, 'hello there');
+});
+
+test('a line that is only formatting is dropped', () => {
+  const before = logcapture.allLogs().length;
+  console.log('%c', 'background-color: red');
+  assert.equal(logcapture.allLogs().length, before, 'nothing worth showing');
+});
+
+test('a log line that reports a failure is promoted to a warning', () => {
+  // strudel reports query failures through console.log, and the footer only
+  // surfaces lines above log level, so these would never be seen
+  for (const text of ['pattern error at line 3', 'query failed', 'cannot use window']) {
+    console.log(text);
+    assert.equal(logcapture.allLogs().at(-1).level, 'warn', text);
+  }
+  console.log('loaded 3 sounds');
+  assert.equal(logcapture.allLogs().at(-1).level, 'log', 'an ordinary line stays a log');
+});
+
+test('the ring buffer does not grow without bound', () => {
+  for (let i = 0; i < 80; i++) console.log(`line ${i}`);
+  const all = logcapture.allLogs();
+  assert.equal(all.length, 40, 'capped');
+  assert.equal(all.at(-1).text, 'line 79', 'keeping the newest');
+});
+
+test('allLogs hands back a copy', () => {
+  const first = logcapture.allLogs();
+  first.push({ level: 'log', text: 'not real', at: Date.now() });
+  assert.notEqual(logcapture.allLogs().length, first.length);
+});
+
+test('recentLog only surfaces lines inside the window', () => {
+  console.log('fresh line');
+  assert.equal(logcapture.recentLog(4000).text, 'fresh line');
+  assert.equal(logcapture.recentLog(0), null, 'nothing is newer than zero ms old');
+});
+
+test('releasing the console stops the capture', () => {
+  logcapture.releaseConsole();
+  const before = logcapture.allLogs().length;
+  console.log('');
+  assert.equal(logcapture.allLogs().length, before, 'no longer recording');
+});
+
 await Promise.all(pending);
 
 // A test that neither passes nor reports a failure must still fail the run.
