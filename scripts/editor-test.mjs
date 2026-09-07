@@ -2485,6 +2485,26 @@ test('releasing the console stops the capture', () => {
   assert.equal(logcapture.allLogs().length, before, 'no longer recording');
 });
 
+test('a continuous signal does not take the roll down', () => {
+  // sine and friends produce haps with no whole. Every caller filters them, so
+  // this is the renderer refusing to depend on that.
+  const analog = { value: { note: 'c3' }, context: {} };
+  const real = {
+    whole: { begin: { valueOf: () => 0 }, end: { valueOf: () => 1 } },
+    value: { note: 'e3', s: 'saw' },
+    context: { locations: [] },
+  };
+  const rows = pianoroll.renderPianoRoll({
+    haps: [analog, real],
+    currentCycle: 0.5,
+    width: 60,
+    height: 10,
+  });
+  assert.equal(rows.length, 10);
+  // and the real note beside it is still drawn
+  assert.ok(rows.some((r) => r.includes('█')), 'the pitched note survived');
+});
+
 await Promise.all(pending);
 
 // A test that neither passes nor reports a failure must still fail the run.

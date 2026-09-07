@@ -144,8 +144,12 @@ export function renderPianoRoll({
   const rollWidth = width - GUTTER;
   const colOf = (cycle) => Math.round(((cycle - windowStart) / cyclesVisible) * rollWidth);
 
+  // A hap without a whole is a continuous signal, which has no onset to draw.
+  // Every caller filters those already, but the check belongs here too: a throw
+  // in the render path takes the interface down, and the next caller to forget
+  // would find out the hard way.
   const inWindow = haps.filter(
-    (h) => h.whole.end.valueOf() > windowStart && h.whole.begin.valueOf() < windowEnd,
+    (h) => h.whole && h.whole.end.valueOf() > windowStart && h.whole.begin.valueOf() < windowEnd,
   );
 
   const pitched = [];
