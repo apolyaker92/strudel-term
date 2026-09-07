@@ -1,0 +1,39 @@
+// strudel-term. type and it plays; ctrl-s to force save.
+// ctrl-g for the mini-notation reference, tab to complete, ctrl-z to undo.
+//
+// slider(x) makes a live control: esc into COMMAND, then arrows to move it,
+// b to write the value back into this file.
+//
+// ctrl-e edits the notes with the arrow keys, opt+arrows for another sequence.
+//
+// Samples load from dirt-samples on startup, so bd sn hh and friends work.
+// Synths need no download: sawtooth square triangle sine supersaw pulse saw,
+// plus the noises white pink brown crackle.
+
+// A minor: the bass walks Am F C G under all of it.
+stack(
+  // drums
+  sound("bd ~ sn ~").gain(0.3),
+  sound("hh*8").gain(0.18),
+
+  // bass, one root per bar
+  note("<a1 f1 c2 g1>")
+    .struct("t ~ t ~ t ~ t ~")
+    .sound("sawtooth")
+    .cutoff(slider(700, 200, 4000))
+    .gain(0.35),
+
+  // melody
+  note("a3 [c4 e4] d4 ~ c4 [b3 a3] e3 ~")
+    .sound("triangle")
+    .delay(0.3)
+    .gain(0.25),
+    
+ //little twinkly stuff  
+  note("<a4 e5 a4 a5>")
+    .struct(" ~ ~ ~ ~ ~ ~ ~ ~ t")
+    .sound("sin")
+    .gain(0.2)
+    .delay(0.6)
+    
+)

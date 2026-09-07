@@ -1,0 +1,41 @@
+# Runs the suite on a clean checkout, which is the thing a working copy cannot
+# tell you. A demo file with an uncalled .rev sat in the repo passing every
+# local run, because this machine's copy of that file had been edited past the
+# bug; npm test exited 1 for anyone cloning it and 0 here, off the same commit.
+#
+# Node 22 is the floor package.json claims, set by node-web-audio-api rather
+# than by anything here. It is in the matrix so the claim is checked rather
+# than assumed.
+
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['22', '24']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      # ci rather than install: it installs from the lockfile exactly, and
+      # fails instead of quietly updating it
+      - run: npm ci
+
+      # The audio backend ships prebuilt binaries for linux-x64 and arm64, and
+      # every test renders through OfflineAudioContext, so no sound device is
+      # needed here. The smoke test does fetch the sample bank; it tolerates
+      # that being unreachable rather than failing the run over it.
+      - run: npm test

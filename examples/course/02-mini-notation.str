@@ -1,0 +1,22 @@
+// 2. THE STRING IS A LANGUAGE
+//
+// The text inside quotes is not a note name list. It is a small language
+// called mini-notation, and it is where most of the expressive power is.
+// Press ctrl-g twice in strudel-term for the full reference.
+
+sound("bd(3, 8), hh * 8, sn")
+
+// ~ is a rest. Above: kick, rest, snare, rest.
+//
+// Swap in these one at a time and listen for what changed:
+//
+//   sound("bd*2 sn")        * repeats faster inside its slot
+//   sound("bd [sn sn] bd ~") [] subdivides one slot further
+//   sound("<bd sn>")         <> picks ONE per cycle, alternating
+//   sound("bd sn, hh*8")     , plays both at once, a chord in time
+//   sound("bd!3 sn")         ! repeats without speeding up
+//   sound("bd(3,8)")         euclidean: 3 hits spread over 8 steps
+//
+// bd(3,8) is worth staring at. It is the tresillo, and it appears in
+// most dance music on earth. You did not program the rhythm, you asked
+// for three things spread as evenly as possible over eight slots.

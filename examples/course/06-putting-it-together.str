@@ -1,0 +1,28 @@
+// 6. THE BITS THAT ARE STRUDEL-TERM, NOT STRUDEL
+//
+// slider(x) turns a number into a live control. Press esc for command
+// mode, then arrows: up and down pick a row, left and right move it.
+// Press b to write the values you landed on back into this file.
+//
+// The tempo, reverb and delay rows are always there. All of it is
+// remembered per file, so this comes back how you left it.
+
+stack(
+  sound("bd ~ bd ~").gain(0.7),
+  sound("~ sn ~ sn").gain(0.5),
+  sound("hh*8").gain(slider(0.2)),
+
+  note("<[c3,eb3,g3] [ab2,c3,eb3] [bb2,d3,f3] [g2,bb2,d3]>")
+    .struct("~ t ~ ~ t ~ ~ t")
+    .sound("square")
+    .cutoff(slider(1500, 200, 5000))
+    .gain(0.18),
+
+  note("c4 [eb4 g4] bb4 [g4 eb4] c5 ~ bb4 g4")
+    .sound("triangle")
+    .gain(0.26)
+    .every(4, rev)
+)
+
+// From here: ctrl-g for mini-notation, ctrl-g again for control ranges,
+// tab after a dot for everything else. Break it and undo with ctrl-z.

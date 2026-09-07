@@ -1,0 +1,19 @@
+// 3. EVENTS CARRY VALUES
+//
+// Each event is a bag of named values. sound() sets which instrument.
+// note() sets pitch. Everything chained after adds more to the bag,
+// and the synth reads the whole bag when the event fires.
+
+note("c3 eb3 g3 bb3 ~ g3")
+  .sound("sine")   // which oscillator
+  .cutoff(500)         // low-pass filter, in Hz. the big one for character
+  .decay(1.5)          // how fast it falls away
+  .sustain(0)          // 0 means it never holds, so it plucks
+  .gain(0.8)
+  .delay(0.3)           // level
+
+// Press tab after typing a dot to see what else exists. Each entry shows
+// what it does and a sensible range, which saves guessing.
+//
+// The filter is the single most useful knob here. Try cutoff(300),
+// then cutoff(3000), and listen to how much of the character it owns.

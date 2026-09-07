@@ -1,0 +1,28 @@
+// 5. FUNCTIONS THAT RESHAPE PATTERNS
+//
+// Because a pattern is a function of time, you can wrap it in other
+// functions that mess with time. This is what separates live coding from
+// a step sequencer.
+
+stack(
+  sound("bd ~ sn ~"),
+
+  note("c4 eb4 g4 bb4")
+    .sound("triangle")
+    .gain(0.3)
+    .every(4, ))      // every 4th cycle, play it backwards
+    .jux(rev)           // and pan a reversed copy to the other ear
+)
+
+// Others worth trying in place of .every(4, rev):
+//
+//   .fast(2)              twice the speed
+//   .slow(2)              half
+//   .rev()                backwards
+//   .every(3, fast(2))    every third cycle, double time
+//   .sometimes(fast(2))   about half the events, at random
+//   .degradeBy(0.3)       randomly drop 30% of events
+//   .off(0.125, x => x.gain(0.2))   a quiet echo an eighth later
+//
+// jux(rev) is the classic. Original in one ear, reversed in the other.
+// Nothing about the notes changed; you changed how time is read.

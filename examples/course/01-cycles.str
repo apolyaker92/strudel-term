@@ -1,0 +1,24 @@
+// 1. THE CYCLE
+//
+// Everything in strudel is measured in cycles, not bars or beats.
+// One cycle is one loop. The tempo row in the panel sets how long it lasts.
+//
+// A pattern is not a list of notes you step through. It is a function:
+// "given a stretch of time, what happens in it?" strudel-term asks that
+// question about 50 times a second, a fraction ahead of the speaker.
+//
+// The practical upshot: whatever is inside the quotes gets divided evenly
+// across ONE cycle, however many things you put there.
+
+sound("bd bd bd bd")
+// one hit per cycle
+
+// Try replacing the line above with each of these, one at a time:
+//
+//   sound("bd bd")        two hits, each half a cycle
+//   sound("bd bd bd")     three hits, each a third
+//   sound("bd sn")        two different sounds
+//   sound("bd sn hh cp")  four
+//
+// Notice you never wrote a duration. You said what goes in the cycle and
+// the cycle divided itself. That is the whole trick.

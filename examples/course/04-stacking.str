@@ -1,0 +1,23 @@
+// 4. LAYERS
+//
+// stack() plays patterns at the same time. This is how a track gets built:
+// each layer is its own independent pattern, on its own timeline.
+
+stack(
+  sound("bd bd bd bd").gain(0.9),
+  sound("~ sn ~ sn").gain(0.5),
+  sound("hh*16").gain(0.4),
+
+  note("c2 bb1 c3  bb2  g1 g2 g3  g4")     // one note per cycle, cycling through four
+     // rhythm from here, pitch from above
+    .sound("supersaw")
+    .cutoff(800)    
+    .gain(0.7)
+    .delay(0.3)
+)
+
+// struct() is the idea worth taking away. It separates WHEN from WHAT.
+// The note pattern says which pitch, the struct says which slots fire.
+// Change one without touching the other.
+//
+// Watch the piano roll: each layer has its own colour.
