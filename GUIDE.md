@@ -131,6 +131,28 @@ turns it into a slow flanger.
 Everything in the mixer is session state rather than part of the file, so `b`
 does not write any of it into your code. A bounce does include it.
 
+## Inline visualizers
+
+`.visualizer()` draws a small strip under the line it sits on, showing only the
+events that line produces.
+
+```js
+note("a3 [c4 e4] d4 ~").sound("triangle").visualizer("roll")
+note("<a1 f1 c2 g1>").sound("sawtooth").visualizer("steps")
+```
+
+`roll` is a five row piano roll, `steps` a single row marking where the onsets
+fall in the cycle. `roll` is the default if you pass nothing.
+
+It changes nothing about the sound. The method returns the pattern it was given
+untouched, and the drawing is worked out from the source: the call is found by
+parsing the file, and events belong to it when the mini-notation they came from
+sits inside the expression the call is chained onto. So the same events reach
+the speakers in the same order whether the call is there or not.
+
+The roll here is for looking at, not editing. Note mode still works on the code
+itself, with `ctrl-e`.
+
 ## Editing notes
 
 Note mode moves pitches with the arrow keys and rewrites the mini-notation to

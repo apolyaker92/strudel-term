@@ -2542,6 +2542,98 @@ for (const file of exampleFiles) {
   });
 }
 
+// --- inline visualizers ---
+const viz = await import('../src/visualizers.mjs');
+
+test('a visualizer call is found with its kind, line and receiver', () => {
+  viz.resetCache();
+  const code = [
+    'stack(',
+    '  sound("bd").gain(0.3),',
+    '  note("a3 c4").sound("triangle").visualizer("roll"),',
+    '  note("a1").visualizer("steps")',
+    ')',
+  ].join('\n');
+
+  const found = viz.findVisualizers(code);
+  assert.equal(found.length, 2);
+  assert.deepEqual(found.map((f) => f.kind), ['roll', 'steps']);
+  // zero indexed, to match the editor rather than acorn
+  assert.deepEqual(found.map((f) => f.line), [2, 3]);
+  // the receiver is what the call is chained onto, not the whole statement
+  assert.equal(code.slice(found[0].start, found[0].end), 'note("a3 c4").sound("triangle")');
+});
+
+test('an unknown kind falls back rather than drawing nothing', () => {
+  viz.resetCache();
+  const found = viz.findVisualizers('note("a3").visualizer("nonsense")');
+  assert.equal(found[0].kind, 'roll');
+});
+
+test('a call with no argument still gets a visualizer', () => {
+  viz.resetCache();
+  assert.equal(viz.findVisualizers('note("a3").visualizer()')[0].kind, 'roll');
+});
+
+test('source that does not parse keeps the last good answer', () => {
+  viz.resetCache();
+  const good = viz.findVisualizers('note("a3").visualizer("steps")');
+  assert.equal(good.length, 1);
+  // mid keystroke the buffer is broken far more often than not, and the strips
+  // should not flicker out every time
+  assert.deepEqual(viz.findVisualizers('note("a3").visualizer("steps"'), good);
+});
+
+test('events are attributed by the range they came from', () => {
+  const target = { start: 10, end: 40 };
+  const inside = { context: { locations: [{ start: 12, end: 20 }] } };
+  const outside = { context: { locations: [{ start: 50, end: 60 }] } };
+  const straddling = { context: { locations: [{ start: 30, end: 60 }] } };
+  const bare = { context: {} };
+  assert.deepEqual(viz.hapsFor([inside, outside, straddling, bare], target), [inside]);
+});
+
+test('each kind knows its height before anything is rendered', () => {
+  // the pane has to size itself before the strips exist
+  assert.equal(viz.heightOf('steps'), 1);
+  assert.equal(viz.heightOf('roll'), 5);
+});
+
+test('a strip is rendered at the height it claimed', () => {
+  const haps = [
+    { whole: { begin: 1, end: 1.5 }, value: { note: 'c3' }, context: { locations: [] } },
+  ];
+  const opts = { haps, currentCycle: 1.2, width: 80 };
+  assert.equal(viz.renderVisualizer({ ...opts, kind: 'steps', height: 1 }).length, 1);
+  assert.equal(viz.renderVisualizer({ ...opts, kind: 'roll', height: 5 }).length, 5);
+});
+
+test('a pane too narrow for a strip gets none', () => {
+  const haps = [];
+  assert.deepEqual(viz.renderVisualizer({ kind: 'steps', haps, currentCycle: 0, width: 10, height: 1 }), []);
+  assert.deepEqual(viz.renderVisualizer({ kind: 'roll', haps, currentCycle: 0, width: 80, height: 2 }), []);
+});
+
+await test('.visualizer() changes nothing about the sound', async () => {
+  const { Engine } = await import('../src/engine.mjs');
+  const plain = new Engine();
+  const marked = new Engine();
+  await plain.setCode('note("a3 c4 e4").sound("triangle")', { quiet: true });
+  const error = await marked.setCode(
+    'note("a3 c4 e4").sound("triangle").visualizer("roll")',
+    { quiet: true },
+  );
+  assert.equal(error ?? null, null, 'evaluates');
+
+  const before = plain.pattern.queryArc(0, 2).filter((h) => h.whole);
+  const after = marked.pattern.queryArc(0, 2).filter((h) => h.whole);
+  assert.equal(after.length, before.length);
+  assert.deepEqual(
+    after.map((h) => h.value.note),
+    before.map((h) => h.value.note),
+  );
+});
+
 await Promise.all(pending);
 
 // A test that neither passes nor reports a failure must still fail the run.

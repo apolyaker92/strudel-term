@@ -7,6 +7,7 @@ import { tokenize, sliceSegments } from './highlight.mjs';
 import * as sliders from './sliders.mjs';
 import * as tracks from './tracks.mjs';
 import { renderTimeline } from './timeline.mjs';
+import { findVisualizers, hapsFor, renderVisualizer, heightOf } from './visualizers.mjs';
 
 const MAX_PANEL_ROWS = 8;
 
@@ -499,7 +500,11 @@ export class Tui {
           sharedCap,
           Math.max(3, available - panelWanted - (this.showWaveform ? this.waveHeight : 0)),
         );
-    const codeHeight = Math.max(3, Math.min(codeLines.length, codeCap));
+    // The strips live inside the code pane, so the pane has to be tall enough
+    // for them or they push the code off the top of their own file.
+    const visualizerCalls = state.cheatsheet ? [] : findVisualizers(editor.text);
+    const stripBudget = visualizerCalls.reduce((n, call) => n + heightOf(call.kind), 0);
+    const codeHeight = Math.max(3, Math.min(codeLines.length + stripBudget, codeCap));
     // a one column track on the right shows where you are in a long file
     const showScrollbar = codeLines.length > codeHeight;
     const bodyWidth = Math.max(1, width - 4 - (showScrollbar ? 1 : 0));
@@ -515,13 +520,41 @@ export class Tui {
 
     const selection = editor.selectionRange?.() ?? null;
 
-    this.cursorRow = 0;
-    for (let row = 0; row < codeHeight; row++) {
-      const idx = this.scrollTop + row;
-      if (idx >= codeLines.length) {
-        lines.push('');
-        continue;
+    // Inline visualizer strips, keyed by the line they sit under. Built from
+    // the source rather than from the pattern, so they cost nothing when the
+    // file has none.
+    const strips = new Map();
+    if (visualizerCalls.length) {
+      const window = engine.visibleHaps(engine.currentCycle - 2, engine.currentCycle + 2);
+      for (const call of visualizerCalls) {
+        const rows = renderVisualizer({
+          kind: call.kind,
+          haps: hapsFor(window, call),
+          currentCycle: engine.currentCycle,
+          width: width - (showScrollbar ? 1 : 0),
+          height: call.kind === 'steps' ? 1 : 5,
+        });
+        if (rows.length) strips.set(call.line, rows);
       }
+    }
+    const stripsUnder = (line) => strips.get(line) ?? [];
+
+    // The strips take rows from the pane, so the cursor can be pushed off the
+    // bottom by lines that are still on screen. Scroll by what is drawn, not by
+    // how many source lines there are.
+    if (strips.size) {
+      const rowsTo = (top) => {
+        let used = 0;
+        for (let line = top; line <= editor.line; line++) used += 1 + stripsUnder(line).length;
+        return used;
+      };
+      while (this.scrollTop < editor.line && rowsTo(this.scrollTop) > codeHeight) this.scrollTop++;
+    }
+
+    this.cursorRow = 0;
+    let drawn = 0;
+    for (let idx = this.scrollTop; idx < codeLines.length && drawn < codeHeight; idx++) {
+      const row = drawn;
       const onCursor = idx === editor.line;
       const errorLine = engine.errorLoc?.line === idx + 1;
       const n = String(idx + 1).padStart(3);
@@ -578,11 +611,22 @@ export class Tui {
       }
 
       lines.push(fit(rendered, width));
+      drawn++;
       if (onCursor) {
         // 1-indexed screen position: header occupies row 1
         this.cursorRow = 2 + row;
         this.cursorCol = 5 + (editor.col - this.scrollLeft);
       }
+
+      for (const strip of stripsUnder(idx)) {
+        if (drawn >= codeHeight) break;
+        lines.push(fit(strip, width));
+        drawn++;
+      }
+    }
+    while (drawn < codeHeight) {
+      lines.push('');
+      drawn++;
     }
 
     // separator

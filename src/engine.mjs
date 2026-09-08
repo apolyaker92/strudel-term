@@ -5,6 +5,7 @@ import * as tracks from './tracks.mjs';
 import { densityFor, pageFor, PAGE_CYCLES } from './timeline.mjs';
 import { installArp } from './arp.mjs';
 import { installTransposeAliases } from './aliases.mjs';
+import { installVisualizer } from './visualizers.mjs';
 
 let scopeReady = null;
 
@@ -16,6 +17,9 @@ async function ensureScope() {
     installArp(core);
     // and the two transposes, which are inert controls in this version
     installTransposeAliases(core);
+    // .visualizer() has to exist for the code to evaluate; it returns the
+    // pattern untouched and the drawing is worked out from the source
+    installVisualizer(core);
     await evalScope(
       import('@strudel/core'),
       import('@strudel/mini'),
