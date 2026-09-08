@@ -1,8 +1,11 @@
 # strudel-term
 
-[Strudel](https://strudel.cc) live coding in the terminal. Editor, piano roll,
+A terminal client for [Strudel](https://strudel.cc). Editor, piano roll,
 oscilloscope and mixer in one pane. No browser: the pattern engine, the synth
 engine and audio output all run in Node.
+
+The language and the sound are Strudel's. This is the interface around them.
+See [Credit](#credit).
 
 ![strudel-term](docs/screenshot.png)
 
@@ -81,7 +84,33 @@ scope as text. No speakers or TTY required, so it runs over ssh and in CI.
 garbage collection, the rebuilt `arp`, the dependency patch, and what does and
 does not work in this environment.
 
+## Credit
+
+Nearly everything that makes sound here belongs to the
+[Strudel](https://codeberg.org/uzu/strudel) project. The pattern language, the
+scheduler, the mini-notation parser, the transpiler and the tonal helpers are
+`@strudel/core`, `@strudel/mini`, `@strudel/transpiler` and `@strudel/tonal`,
+roughly 22,600 lines. The synth and sampler engine is
+[superdough](https://codeberg.org/uzu/strudel/src/branch/main/packages/superdough),
+another 9,300. Strudel is by Felix Roos, Alex McLean and its contributors, and
+grew out of [TidalCycles](https://tidalcycles.org).
+
+This repository is about 5,400 lines on top of that: a terminal interface, an
+editor, a scheduler that drives the engine in realtime, and the renderers for
+the roll, the scope and the mixer. It invents no notation. A pattern written
+here is a Strudel pattern and will run in the browser REPL, apart from the two
+bus effects, which are ours.
+
+It does change three things upstream. `arp` and `arpWith` are rebuilt, because
+the versions in core 1.2.6 yield events with undefined values and silently
+produce nothing. `ctranspose` and `mtranspose` are aliased to `transpose` and
+`scaleTranspose`, because here they are controls that set a value nothing reads.
+Those are noted in [NOTES.md](NOTES.md).
+
+If you like this, the browser REPL at [strudel.cc](https://strudel.cc) is the
+real project and is where the work is happening.
+
 ## Licence
 
-AGPL-3.0-or-later, inherited from strudel and superdough. See
-[COPYING.md](COPYING.md).
+AGPL-3.0-or-later, inherited from Strudel and superdough, which are AGPL
+themselves. See [COPYING.md](COPYING.md).
