@@ -1,3 +1,5 @@
+<img src="docs/icon.png" alt="" width="128" align="right">
+
 # strudel-term
 
 A terminal client for [Strudel](https://strudel.cc). Editor, piano roll,
