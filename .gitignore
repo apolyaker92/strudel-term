@@ -3,3 +3,4 @@ node_modules/
 live.str
 *.wav
 *.bak
+web-dist/

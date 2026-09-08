@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>strudel-term</title>
+    <script>
+      // tui.mjs reads process.env at module scope, so this has to exist before
+      // any module evaluates. An import would be too late.
+      globalThis.__term = null;
+      globalThis.process = {
+        env: {},
+        platform: 'browser',
+        argv: [],
+        exit() {},
+        on() {},
+        stdout: {
+          isTTY: true,
+          write(text) {
+            globalThis.__term?.write(text);
+            return true;
+          },
+          get columns() {
+            return globalThis.__term?.cols ?? 80;
+          },
+          get rows() {
+            return globalThis.__term?.rows ?? 24;
+          },
+          on() {},
+        },
+      };
+    </script>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #11131a;
+        color: #d8dee9;
+        font-family: ui-sans-serif, system-ui, sans-serif;
+      }
+      #term {
+        height: 100%;
+        padding: 10px;
+        box-sizing: border-box;
+      }
+      #start {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-content: center;
+        gap: 12px;
+        justify-items: center;
+        background: rgba(17, 19, 26, 0.94);
+        z-index: 10;
+        text-align: center;
+      }
+      #start button {
+        font: inherit;
+        padding: 10px 22px;
+        border-radius: 999px;
+        border: 1px solid #4c566a;
+        background: #a3be8c;
+        color: #11131a;
+        cursor: pointer;
+      }
+      #start p {
+        max-width: 34ch;
+        color: #8f9aae;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="term"></div>
+    <div id="start">
+      <button id="go">Start audio</button>
+      <p>Browsers keep audio muted until you click. Type in the terminal and it plays.</p>
+    </div>
+    <script type="module" src="./main.mjs"></script>
+  </body>
+</html>
