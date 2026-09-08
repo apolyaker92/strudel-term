@@ -97,9 +97,10 @@ grew out of [TidalCycles](https://tidalcycles.org).
 
 This repository is about 5,400 lines on top of that: a terminal interface, an
 editor, a scheduler that drives the engine in realtime, and the renderers for
-the roll, the scope and the mixer. It invents no notation. A pattern written
-here is a Strudel pattern and will run in the browser REPL, apart from the two
-bus effects, which are ours.
+the roll, the scope and the mixer. It invents no notation, so a pattern written
+here is a Strudel pattern and runs in the browser REPL unchanged. The flanger
+and chorus are ours but are mixer state rather than syntax, so they never appear
+in a file either.
 
 It does change three things upstream. `arp` and `arpWith` are rebuilt, because
 the versions in core 1.2.6 yield events with undefined values and silently
