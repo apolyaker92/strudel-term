@@ -7,6 +7,7 @@
 import { installArp } from './arp.mjs';
 import { installTransposeAliases } from './aliases.mjs';
 import { installVisualizer } from './visualizers.mjs';
+import { installFlanger } from './flanger.mjs';
 
 export function installExtensions(core) {
   // replaces core's arp, which throws inside the query in 1.2.6
@@ -16,4 +17,6 @@ export function installExtensions(core) {
   // .visualizer() has to exist for the code to evaluate; it returns the
   // pattern untouched and the drawing is worked out from the source
   installVisualizer(core);
+  // .flanger(), which superdough has no control for, built on an orbit each
+  installFlanger(core);
 }

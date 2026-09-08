@@ -1,10 +1,11 @@
 import { evalScope } from '@strudel/core';
-import { initAudio, audioTime, trigger, deviceLooksDead } from './audio.mjs';
+import { initAudio, audioTime, trigger, deviceLooksDead, setOrbitFlangers } from './audio.mjs';
 import * as sliders from './sliders.mjs';
 import * as tracks from './tracks.mjs';
 import { densityFor, pageFor, PAGE_CYCLES } from './timeline.mjs';
 import { installExtensions } from './install.mjs';
 import { resetWaveIds } from './visualizers.mjs';
+import { resetFlangers, flangerSpecs } from './flanger.mjs';
 
 let scopeReady = null;
 
@@ -183,6 +184,8 @@ export class Engine {
       // wave visualizers take an analyser id each as they evaluate, and the
       // source scan numbers them the same way, so the count starts clean
       resetWaveIds();
+      // .flanger() claims an orbit each as it evaluates
+      resetFlangers();
 
       // emitMiniLocations tags each event with the source that produced it,
       // which is what lets a note in the roll be edited back into the code
@@ -192,6 +195,9 @@ export class Engine {
       // rather than a pattern. That is truthy, so a plain existence check let it
       // through and the scheduler then failed on every tick. Check for the one
       // thing we actually need from it.
+      // whatever the new code asked for, and nothing the old code did
+      setOrbitFlangers(flangerSpecs());
+
       if (typeof result?.pattern?.queryArc !== 'function') {
         throw new Error(
           result?.pattern

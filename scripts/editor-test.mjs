@@ -2669,6 +2669,68 @@ await test('.visualizer() changes nothing about the sound', async () => {
   );
 });
 
+// --- .flanger() ---
+const flangerMod = await import('../src/flanger.mjs');
+
+await test('.flanger() puts each pattern on an orbit of its own', async () => {
+  const { Engine } = await import('../src/engine.mjs');
+  const engine = new Engine();
+  const error = await engine.setCode(
+    'stack(note("c3").s("sawtooth").flanger(0.7), note("e3").s("triangle"), note("g3").s("square").flanger(0.3))',
+    { quiet: true },
+  );
+  assert.equal(error ?? null, null);
+
+  const haps = engine.pattern.queryArc(0, 1).filter((h) => h.whole);
+  const orbits = haps.map((h) => h.value.orbit);
+  // two flangers, two orbits, and the layer without one is left alone
+  assert.deepEqual(orbits, [8, undefined, 9]);
+  assert.deepEqual(flangerMod.flangerSpecs(), [
+    { orbit: 8, mix: 0.7 },
+    { orbit: 9, mix: 0.3 },
+  ]);
+});
+
+await test('the flanger insert passes dry at zero and colours the signal when up', async () => {
+  const { OfflineAudioContext } = await import('node-web-audio-api');
+  const { createInsert } = await import('../src/buseffects.mjs');
+
+  const render = async (mix) => {
+    const rate = 22050;
+    const ctx = new OfflineAudioContext(1, rate, rate);
+    const insert = createInsert(ctx);
+    insert.output.connect(ctx.destination);
+    if (mix !== null) insert.setMix(mix);
+
+    const osc = ctx.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.value = 220;
+    const gain = ctx.createGain();
+    gain.gain.value = 0.3;
+    osc.connect(gain).connect(insert.input);
+    osc.start(0);
+    osc.stop(1);
+    const rendered = await ctx.startRendering();
+    insert.stop();
+    return rendered.getChannelData(0).slice();
+  };
+
+  const untouched = await render(null);
+  const dry = await render(0);
+  const wet = await render(1);
+
+  const diff = (a, b) => {
+    let total = 0;
+    for (let i = 0; i < a.length; i++) total += Math.abs(a[i] - b[i]);
+    return total / a.length;
+  };
+  const peak = (a) => a.reduce((top, v) => Math.max(top, Math.abs(v)), 0);
+
+  assert.equal(diff(untouched, dry), 0, 'at zero it is the signal untouched');
+  assert.ok(diff(untouched, wet) > 1e-4, 'turned up it changes the signal');
+  assert.ok(peak(wet) <= peak(dry) * 1.05, 'and does not run the level away');
+});
+
 await Promise.all(pending);
 
 // A test that neither passes nor reports a failure must still fail the run.

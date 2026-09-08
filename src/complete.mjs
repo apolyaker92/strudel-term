@@ -173,6 +173,7 @@ const CURATED = {
   vib: 'vibrato rate',
   pw: 'pulse width, for the pulse oscillator',
   seed: 'fix the random seed so randomness repeats',
+  flanger: 'flange this pattern alone, 0 to 1; not a superdough control, see the guide',
   visualizer: 'draw a strip under this line: "roll", "steps" or "wave"',
   label: 'tag events; browser only, no effect here',
   color: 'colour for visuals; browser only, no effect here',

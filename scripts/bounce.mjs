@@ -19,7 +19,8 @@ import { installExtensions } from '../src/install.mjs';
 import * as sliders from '../src/sliders.mjs';
 import * as tracks from '../src/tracks.mjs';
 import { encodeWav } from '../src/wav.mjs';
-import { createBusChain, BUS_PRESETS, BUS_PARAMS } from '../src/buseffects.mjs';
+import { createBusChain, createInsert, BUS_PRESETS, BUS_PARAMS } from '../src/buseffects.mjs';
+import { flangerSpecs } from '../src/flanger.mjs';
 
 const args = process.argv.slice(2);
 const [source, output] = args.filter((a) => !a.startsWith('--'));
@@ -194,6 +195,24 @@ for (const hap of haps) {
   }
 }
 await Promise.all(triggers);
+
+// .flanger() hangs its delay line on the pattern's own orbit. The app does that
+// from trigger(), which a bounce never calls, so the effect was simply absent
+// from a render: identical wav, no warning. The orbits exist now that the
+// voices are scheduled, and nothing has been rendered yet.
+for (const { orbit, mix } of flangerSpecs()) {
+  const bus = dough.getSuperdoughAudioController?.()?.getOrbit?.(orbit, [0, 1]);
+  if (!bus?.summingNode || !bus?.output) continue;
+  try {
+    const insert = createInsert(context, BUS_PRESETS.flanger);
+    bus.summingNode.disconnect();
+    bus.summingNode.connect(insert.input);
+    insert.output.connect(bus.output);
+    insert.setMix(mix);
+  } catch {
+    // superdough owns this graph; leave it alone if its shape has changed
+  }
+}
 
 const rendered = await context.startRendering();
 const channels = [rendered.getChannelData(0), rendered.getChannelData(1)];

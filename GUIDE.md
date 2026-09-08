@@ -131,6 +131,26 @@ turns it into a slow flanger.
 Everything in the mixer is session state rather than part of the file, so `b`
 does not write any of it into your code. A bounce does include it.
 
+**A flanger in code.** `.flanger(0.7)` flanges one pattern rather than the whole
+mix, so two patterns can have different settings:
+
+```js
+stack(
+  note("c3 e3").sound("sawtooth").flanger(0.7),
+  note("g2").sound("square")
+)
+```
+
+It works by giving that pattern an orbit of its own, which is superdough's own
+idea of an effect bus, and hanging the delay line on it. Orbits are also the
+reverb and delay sends, so a flanged pattern gets its own tail rather than
+sharing the usual one. A pattern that sets `.orbit()` itself keeps what it asked
+for; allocation starts at 8 to stay out of the way.
+
+There is no `.chorus()` to match it. Strudel has a control by that name and
+superdough does not implement it, so it does nothing; the mixer's chorus is the
+one that works.
+
 ## Inline visualizers
 
 `.visualizer()` draws a small strip under the line it sits on, showing only the

@@ -140,3 +140,43 @@ export function createBusChain(context, destination, overrides = {}) {
     },
   };
 }
+
+/**
+ * One modulated delay wired as an insert: dry passes, wet is added on top, and
+ * the pair sit between whatever fed the input and whatever the output feeds.
+ * Used per orbit, so a single pattern can be flanged without touching the mix.
+ */
+export function createInsert(context, preset = BUS_PRESETS.flanger) {
+  const input = context.createGain();
+  const output = context.createGain();
+  const effect = makeModDelay(context, preset);
+
+  input.connect(output);
+  input.connect(effect.input);
+  effect.output.connect(output);
+
+  return {
+    input,
+    output,
+    setMix(mix) {
+      const target = Math.max(0, Math.min(1, Number(mix) || 0));
+      // wet on top of dry adds level, so trim the pair as it comes up
+      const trim = 1 / (1 + 0.6 * target);
+      try {
+        effect.wet.gain.setTargetAtTime(target, context.currentTime, 0.02);
+        output.gain.setTargetAtTime(trim, context.currentTime, 0.02);
+      } catch {
+        effect.wet.gain.value = target;
+        output.gain.value = trim;
+      }
+    },
+    stop() {
+      try {
+        effect.lfo.stop();
+        effect.lfo.disconnect();
+      } catch {
+        // already stopped
+      }
+    },
+  };
+}
