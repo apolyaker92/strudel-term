@@ -1,6 +1,7 @@
 import './shim.mjs';
 import { AudioContext } from 'node-web-audio-api';
-import { createBusChain, createInsert, BUS_PRESETS } from './buseffects.mjs';
+import { createBusChain } from './buseffects.mjs';
+import { createOrbitInserts } from './orbitinsert.mjs';
 
 let ctx = null;
 let dough = null;
@@ -164,42 +165,14 @@ export async function initAudio(latencyHint = null, options = {}) {
   }
 }
 
-// Latest time-domain block from the master tap, or null before audio starts.
-// The same buffer is reused each call; the renderer consumes it immediately.
-// Time-domain samples for one .analyze() id, used by the wave visualizer.
-// Null offline and before anything has played through that analyser.
-// Per orbit flanger inserts for .flanger(). An orbit only exists once something
-// has played on it, so the chain is hung on first use from trigger() rather
-// than when the code is evaluated.
-const orbitInserts = new Map();
-let orbitMixes = new Map();
+const orbitInserts = createOrbitInserts({ getContext: () => ctx, getDough: () => dough });
 
 export function setOrbitFlangers(specs) {
-  orbitMixes = new Map(specs.map(({ orbit, mix }) => [orbit, mix]));
-  for (const [orbit, insert] of orbitInserts) {
-    // an orbit no longer asked for goes dry rather than being torn out of a
-    // graph that superdough still owns
-    insert.setMix(orbitMixes.get(orbit) ?? 0);
-  }
+  orbitInserts.setFlangers(specs);
 }
 
-function ensureOrbitInsert(orbit) {
-  if (orbit == null || orbitInserts.has(orbit) || !orbitMixes.has(orbit)) return;
-  const controller = dough?.getSuperdoughAudioController?.();
-  const bus = controller?.getOrbit?.(orbit, [0, 1]);
-  if (!bus?.summingNode || !bus?.output) return;
-  try {
-    const insert = createInsert(ctx, BUS_PRESETS.flanger);
-    bus.summingNode.disconnect();
-    bus.summingNode.connect(insert.input);
-    insert.output.connect(bus.output);
-    insert.setMix(orbitMixes.get(orbit));
-    orbitInserts.set(orbit, insert);
-  } catch {
-    // superdough owns this graph; if its shape has changed, leave it alone
-  }
-}
-
+// Time-domain samples for one .analyze() id, used by the wave visualizer.
+// Null offline and before anything has played through that analyser.
 export function analyserData(id) {
   if (silent || !dough) return null;
   try {
@@ -209,6 +182,8 @@ export function analyserData(id) {
   }
 }
 
+// Latest time-domain block from the master tap, or null before audio starts.
+// The same buffer is reused each call; the renderer consumes it immediately.
 export function waveform() {
   if (silent) return null;
   if (!masterAnalyser || !waveBuffer) return null;
@@ -334,7 +309,7 @@ export function trigger(value, time, duration) {
   if (!dough) return null;
   try {
     dough.superdough(value, time, duration);
-    ensureOrbitInsert(value?.orbit);
+    orbitInserts.ensure(value?.orbit);
     return null;
   } catch (err) {
     return err.message;

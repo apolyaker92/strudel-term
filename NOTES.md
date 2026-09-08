@@ -150,6 +150,28 @@ need argument shapes the sweep cannot express and all work by hand.
 
 Worth repeating that sweep after a strudel upgrade.
 
+## .flanger() and .djf() were fighting over the same node
+
+superdough's `Orbit` sends its summing node straight to the orbit output, and
+`.flanger()` splices a modulated delay in between. So does `.djf()`, except
+`getDjf()` gets there by calling `summingNode.disconnect()`, which cuts every
+connection off that node including ours.
+
+Measured by hanging an insert on the summing node, leaving its output
+unconnected, and listening at the insert: 0.707 RMS on its own, exactly 0.0
+after `getDjf()` ran. Whichever of the two was applied second won, and the
+loser went silent with nothing logged.
+
+The insert now hangs off `bus.djfNode ?? bus.summingNode` and that lookup
+happens on every trigger rather than once, so a `.djf()` appearing part way
+through a pattern moves the flanger behind it instead of killing it. The same
+insert object is reused across the move, so the flanger's LFO keeps its phase.
+
+The code lived in two copies, `src/audio.mjs` and its browser twin, and that
+duplication is what let `maxChannelCount` drift and go silent in the browser
+earlier. It is now one module, `src/orbitinsert.mjs`, parameterised by how each
+side gets at its context.
+
 ## The dead control audit
 
 Every one of the 59 controls carrying a documented range was rendered twice

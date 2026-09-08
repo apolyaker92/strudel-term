@@ -2226,6 +2226,68 @@ test('controls that do work are not flagged', () => {
   }
 });
 
+// --- per orbit flanger inserts ---
+const { createOrbitInserts } = await import('../src/orbitinsert.mjs');
+
+// The orbit's summing node and djf worklet stand in as recorders, so the test
+// is about which node the insert hangs off rather than about audio. The output
+// is a real node because the insert's own output really connects to it.
+function fakeOrbit(ctx) {
+  const stub = (name) => ({ name, connected: [], disconnects: 0,
+    connect(to) { this.connected.push(to); },
+    disconnect() { this.disconnects++; } });
+  const bus = { summingNode: stub('summing'), output: ctx.createGain(), djfNode: null };
+  // exactly what superdough's Orbit.getDjf does on first use, including the
+  // disconnect that cuts anything already hung off the summing node
+  bus.spliceDjf = () => {
+    bus.djfNode = stub('djf');
+    bus.summingNode.disconnect();
+    bus.summingNode.connect(bus.djfNode);
+    bus.djfNode.connect(bus.output);
+  };
+  return bus;
+}
+
+test('a flanger insert follows the orbit tail when .djf() splices itself in', async () => {
+  const { OfflineAudioContext } = await import('node-web-audio-api');
+  const ctx = new OfflineAudioContext(2, 1024, 22050);
+  const bus = fakeOrbit(ctx);
+  const dough = { getSuperdoughAudioController: () => ({ getOrbit: () => bus }) };
+  const inserts = createOrbitInserts({ getContext: () => ctx, getDough: () => dough });
+
+  inserts.setFlangers([{ orbit: 8, mix: 0.5 }]);
+  inserts.ensure(8);
+  const hung = bus.summingNode.connected.at(-1);
+  assert.ok(hung, 'insert hung off the summing node');
+
+  // a repeat trigger on an unchanged orbit must not rewire anything
+  inserts.ensure(8);
+  assert.equal(bus.summingNode.connected.length, 1, 'no second connection');
+
+  // .djf() now cuts the summing node loose, which is the bug: without a
+  // rehang the insert is left receiving nothing and the flanger goes silent
+  bus.spliceDjf();
+  inserts.ensure(8);
+  assert.equal(bus.djfNode.connected.at(-1), hung, 'insert moved behind the djf');
+  assert.equal(bus.djfNode.connected.length, 2, 'output first, then the insert');
+});
+
+test('an orbit no longer asked for goes dry instead of being torn out', async () => {
+  const { OfflineAudioContext } = await import('node-web-audio-api');
+  const ctx = new OfflineAudioContext(2, 1024, 22050);
+  const bus = fakeOrbit(ctx);
+  const dough = { getSuperdoughAudioController: () => ({ getOrbit: () => bus }) };
+  const inserts = createOrbitInserts({ getContext: () => ctx, getDough: () => dough });
+
+  inserts.setFlangers([{ orbit: 8, mix: 0.5 }]);
+  inserts.ensure(8);
+  assert.equal(bus.summingNode.connected.length, 1);
+
+  inserts.setFlangers([]);
+  inserts.ensure(8);
+  assert.equal(bus.summingNode.connected.length, 1, 'graph left alone');
+});
+
 // --- the bus chain itself ---
 const { createBusChain, BUS_PRESETS } = await import('../src/buseffects.mjs');
 

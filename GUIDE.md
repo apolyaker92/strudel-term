@@ -147,6 +147,10 @@ reverb and delay sends, so a flanged pattern gets its own tail rather than
 sharing the usual one. A pattern that sets `.orbit()` itself keeps what it asked
 for; allocation starts at 8 to stay out of the way.
 
+`.djf()` splices itself into the same point of the same orbit, so the two used
+to fight and whichever came second silenced the other. The flanger now moves
+itself behind the djf, and both are audible together.
+
 There is no `.chorus()` to match it. Strudel has a control by that name and
 superdough does not implement it, so it does nothing; the mixer's chorus is the
 one that works.
