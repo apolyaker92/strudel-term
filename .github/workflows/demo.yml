@@ -1,0 +1,53 @@
+# Builds web/ and publishes it to GitHub Pages, so the demo is served from its
+# own origin. It used to be copied into the website repo by hand, which meant a
+# megabyte of build output committed there and a copy that went stale silently
+# whenever this project changed.
+
+name: demo
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time, and a newer push wins
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      # ci rather than install, and it must run the postinstall: without the
+      # @kabelsalat/web patch @strudel/core does not import and the bundle is
+      # built against a module that throws
+      - run: npm ci
+
+      - run: npm run web:build
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web-dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
