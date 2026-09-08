@@ -2208,7 +2208,7 @@ test('bus rows ride like every other global', () => {
 test('controls with nothing behind them say so', () => {
   // strudel accepts these and superdough 1.3.0 implements none of them, which
   // is silent and maddening to debug by ear
-  for (const name of ['chorus', 'leslie', 'squiz', 'waveloss', 'triode', 'krush', 'ring']) {
+  for (const name of ['chorus', 'overgain', 'leslie', 'squiz', 'waveloss', 'triode', 'krush', 'ring']) {
     assert.ok(isUnsupported(name), `${name} should be flagged`);
     assert.match(describe(name), /no effect here/, name);
     assert.equal(rangeOf(name), null, `${name} should not advertise a range`);
@@ -2216,7 +2216,12 @@ test('controls with nothing behind them say so', () => {
 });
 
 test('controls that do work are not flagged', () => {
-  for (const name of ['phaser', 'tremolo', 'vib', 'crush', 'coarse', 'shape', 'distort', 'vowel']) {
+  // pan, resonance, unison, legato and clip were all suspects in an audit that
+  // rendered every control with and without and compared the samples. Each one
+  // turned out to need a context to show in: pan needs both channels read,
+  // resonance a cutoff, unison a supersaw, legato a sample or drum synth.
+  const names = ['phaser', 'tremolo', 'vib', 'crush', 'coarse', 'shape', 'distort', 'vowel'];
+  for (const name of [...names, 'pan', 'resonance', 'unison', 'legato', 'clip']) {
     assert.ok(!isUnsupported(name), `${name} works and should not be flagged`);
   }
 });

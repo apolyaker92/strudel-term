@@ -149,3 +149,32 @@ trying argument counts from zero to three against three base patterns, found
 need argument shapes the sweep cannot express and all work by hand.
 
 Worth repeating that sweep after a strudel upgrade.
+
+## The dead control audit
+
+Every one of the 59 controls carrying a documented range was rendered twice
+through the real trigger path, once plain and once with the control set, and
+the two buffers compared by RMS and checksum. A control with a range in the
+reference panel that does nothing is the worst case: the docs promise a number
+and the ear finds nothing.
+
+Seven came back byte-identical: `pan`, `resonance`, `orbit`, `legato`, `clip`,
+`overgain` and `unison`. Four of those were the probe's fault, not the
+control's.
+
+- `pan` only moves energy between channels, and the first probe summed to mono.
+- `resonance` needs a cutoff engaged. With one: 0.061 to 0.093 RMS.
+- `unison` needs a voice that has one, `supersaw`: 0.049 to 0.039.
+- `legato` and `clip` are the same control and are half-implemented upstream.
+  superdough honours them in `sampler.mjs`, `wavetable.mjs` and `sbd`, and the
+  generic oscillator synth ignores them, so `.legato(0.2)` shortens `s("sbd")`
+  from 0.096 to 0.079 and does nothing at all to a sawtooth.
+- `orbit` is routing, so identical output is the correct answer.
+
+That leaves `overgain`, which is genuinely dead: it is registered in
+`@strudel/core/controls.mjs` and read nowhere in superdough. It joins `chorus`
+in the unsupported table and its range entry is gone.
+
+The lesson is the probe, not the controls. Four false positives in one run, all
+from measuring in a context where the control had nothing to act on. Any repeat
+of this sweep should give each control a base pattern it can actually change.
