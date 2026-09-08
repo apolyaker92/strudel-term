@@ -2208,7 +2208,7 @@ test('bus rows ride like every other global', () => {
 test('controls with nothing behind them say so', () => {
   // strudel accepts these and superdough 1.3.0 implements none of them, which
   // is silent and maddening to debug by ear
-  for (const name of ['leslie', 'squiz', 'waveloss', 'triode', 'krush', 'ring']) {
+  for (const name of ['chorus', 'leslie', 'squiz', 'waveloss', 'triode', 'krush', 'ring']) {
     assert.ok(isUnsupported(name), `${name} should be flagged`);
     assert.match(describe(name), /no effect here/, name);
     assert.equal(rangeOf(name), null, `${name} should not advertise a range`);

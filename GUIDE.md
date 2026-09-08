@@ -258,8 +258,13 @@ and inside a comment nothing.
 line in both was checked against this build.
 
 Some controls strudel accepts do nothing here, because superdough does not
-implement them: `leslie`, `ring`, `ringf`, `krush`, `squiz`, `waveloss` and
-`triode`. Completion says so rather than letting you chase them by ear.
+implement them: `chorus`, `leslie`, `ring`, `ringf`, `krush`, `squiz`,
+`waveloss` and `triode`. Completion says so rather than letting you chase them
+by ear.
+
+`chorus` is the one to watch. The mixer has a chorus that works, and it is not
+that control: writing `.chorus(0.8)` in a pattern changes nothing at all. Turn
+the mixer row up instead.
 
 ## Flags
 

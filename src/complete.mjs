@@ -184,6 +184,7 @@ const CURATED = {
 // without each through an OfflineAudioContext, identical to the bit. A
 // superdough upgrade is what would make this wrong, so re-check it.
 const UNSUPPORTED = {
+  chorus: 'no effect here; the mixer has a chorus that works, this control does not',
   leslie: 'rotating speaker; no effect here, superdough has none',
   ring: 'ring modulation; no effect here, superdough has none',
   ringf: 'ring modulator frequency; no effect here',
