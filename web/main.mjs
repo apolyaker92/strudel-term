@@ -19,9 +19,17 @@ import { initAudio, loadSampleBank } from './audio-browser.mjs';
 import STARTER from '../examples/first.str?raw';
 
 
+// The layout wants about 90 columns before it stops looking like itself, so
+// the type is sized to the box rather than fixed: a phone gets small text and
+// enough columns instead of large text and half a header.
+function fontFor(width) {
+  const CELL_RATIO = 0.6; // a monospace cell is roughly 0.6em wide
+  return Math.max(8, Math.min(14, Math.floor(width / (90 * CELL_RATIO))));
+}
+
 const term = new Terminal({
   fontFamily: '"Cascadia Mono", "JetBrains Mono", Menlo, monospace',
-  fontSize: 13,
+  fontSize: fontFor(window.innerWidth),
   theme: { background: '#11131a', foreground: '#d8dee9' },
   cursorBlink: true,
   convertEol: false,
@@ -251,7 +259,11 @@ term.onData((data) => {
   }
   refreshHint();
 });
-window.addEventListener('resize', () => fit.fit());
+window.addEventListener('resize', () => {
+  const size = fontFor(window.innerWidth);
+  if (size !== term.options.fontSize) term.options.fontSize = size;
+  fit.fit();
+});
 
 // Names come from the loaded modules, so completion tracks whatever is bundled.
 //
