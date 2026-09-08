@@ -1,16 +1,9 @@
-// strudel-term. type and it plays; ctrl-s to force save.
-// ctrl-g for the mini-notation reference, tab to complete, ctrl-z to undo.
+// Type and it plays.
 //
-// slider(x) makes a live control: esc into COMMAND, then arrows to move it,
-// b to write the value back into this file.
-//
-// ctrl-e edits the notes with the arrow keys, opt+arrows for another sequence.
-//
-// Samples load from dirt-samples on startup, so bd sn hh and friends work.
-// Synths need no download: sawtooth square triangle sine supersaw pulse saw,
-// plus the noises white pink brown crackle.
+//   esc      command mode       space   play/pause
+//   tab      complete           ctrl-z  undo
+//   ctrl-s   save now           ctrl-g  reference
 
-// A minor: the bass walks Am F C G under all of it.
 stack(
   // drums
   sound("bd ~ sn ~").gain(0.3),
