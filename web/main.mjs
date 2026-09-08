@@ -237,20 +237,31 @@ function handleKey(key) {
 
 term.onData((data) => {
   for (const key of parseKeys(data)) {
+    // Anything but tab ends the run being cycled through. Without this the
+    // dropdown stays up after the word is finished, because refreshHint keeps
+    // drawing it for as long as a completion is active.
+    const isTab = key.type === 'char' && key.ch === '\t';
     try {
       handleKey(key);
     } catch (err) {
       // otherwise a bad handler kills the keystroke in silence
       state.error = `key handler: ${err.message}`;
     }
+    if (!isTab) completion = null;
   }
   refreshHint();
 });
 window.addEventListener('resize', () => fit.fit());
 
 // Names come from the loaded modules, so completion tracks whatever is bundled.
+//
+// The first evaluation has to happen before the vocabulary is read: the methods
+// this project adds, .visualizer() among them, are installed while evaluating,
+// so enumerating the prototype first misses them. It also means the roll and
+// the strips are drawn before you press start.
 (async () => {
   try {
+    await engine.setCode(editor.text, { quiet: true });
     const core = await import('@strudel/core');
     const tonal = await import('@strudel/tonal');
     const dough = await import('superdough');
