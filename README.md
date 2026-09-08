@@ -11,6 +11,10 @@ See [Credit](#credit).
 
 ![strudel-term](docs/screenshot.png)
 
+**[Try it in a browser](https://apolyaker92.github.io/strudel-term/)**, no install.
+Insert and command modes, the roll, the scope and the mixer all work there; note
+mode and bouncing do not, since they want a file and a child process.
+
 ## Install
 
 Needs macOS or Linux with working audio.
