@@ -10,19 +10,51 @@
 
 import { parse } from 'acorn';
 import { renderPianoRoll } from './pianoroll.mjs';
+import { renderWaveform } from './waveform.mjs';
+import { analyserData } from './audio.mjs';
 
-export const KINDS = ['roll', 'steps'];
+export const KINDS = ['roll', 'steps', 'wave'];
 
 /** Rows a kind occupies, known without rendering so the pane can size itself. */
-export const heightOf = (kind) => (kind === 'steps' ? 1 : 5);
+export const heightOf = (kind) => (kind === 'steps' ? 1 : kind === 'wave' ? 4 : 5);
 const DEFAULT_KIND = 'roll';
+
+// Ids for the wave kind, handed out in evaluation order and matched to the
+// source scan, which numbers them in source order. A stack evaluates its
+// arguments left to right, so the two agree; anything that defers evaluation
+// out of source order would not, and would draw the wrong pattern's audio.
+let waveCount = 0;
+export const waveId = (n) => `viz${n}`;
+export function resetWaveIds() {
+  waveCount = 0;
+}
 
 // A prototype method rather than core.register, which patternifies its argument
 // and so rebuilds the query: the events and their times came back identical but
-// in a different order, and this is supposed to touch nothing at all.
+// in a different order.
+//
+// roll and steps are inert, and everything they draw comes from the source.
+// wave cannot be: the audio has to reach an analyser for there to be anything
+// to show, so that one attaches .analyze(), which taps the signal rather than
+// changing it. In an offline render superdough ignores analyze entirely, so a
+// bounce is unaffected either way.
+// The transpiler rewrites a string argument into mini notation, so what arrives
+// here is a Pattern, not "wave". Reading the string back out of it is the
+// difference between this working and silently doing nothing.
+function kindOf(arg) {
+  if (typeof arg === 'string') return arg;
+  try {
+    const value = arg?.queryArc?.(0, 1)?.[0]?.value;
+    return typeof value === 'string' ? value : DEFAULT_KIND;
+  } catch {
+    return DEFAULT_KIND;
+  }
+}
+
 export function installVisualizer(core) {
-  core.Pattern.prototype.visualizer = function visualizer() {
-    return this;
+  core.Pattern.prototype.visualizer = function visualizer(kind) {
+    if (kindOf(kind) !== 'wave') return this;
+    return this.analyze(waveId(waveCount++));
   };
 }
 
@@ -42,6 +74,7 @@ export function findVisualizers(code) {
   if (cache.code === code) return cache.found;
 
   const found = [];
+  let waves = 0;
   try {
     const ast = parse(code, { ecmaVersion: 'latest', locations: true });
     const walk = (node) => {
@@ -52,11 +85,13 @@ export function findVisualizers(code) {
         node.callee.property?.name === 'visualizer'
       ) {
         const arg = node.arguments[0];
-        const kind = typeof arg?.value === 'string' ? arg.value : DEFAULT_KIND;
+        const raw = typeof arg?.value === 'string' ? arg.value : DEFAULT_KIND;
+        const kind = KINDS.includes(raw) ? raw : DEFAULT_KIND;
         found.push({
           // acorn lines are 1-indexed, the editor's are not
           line: node.loc.end.line - 1,
-          kind: KINDS.includes(kind) ? kind : DEFAULT_KIND,
+          kind,
+          id: kind === 'wave' ? waveId(waves++) : null,
           start: node.callee.object.start,
           end: node.callee.object.end,
         });
@@ -115,7 +150,7 @@ function renderSteps({ haps, currentCycle, width, cyclesVisible }) {
  * Rows to draw under a line. Indented to sit under the code rather than the
  * gutter, and never taller than the space it is given.
  */
-export function renderVisualizer({ kind, haps, currentCycle, width, height, cyclesVisible = 2 }) {
+export function renderVisualizer({ kind, id, haps, currentCycle, width, height, cyclesVisible = 2 }) {
   const indent = 6;
   const inner = width - indent;
   if (inner < 12 || height < 1) return [];
@@ -123,6 +158,13 @@ export function renderVisualizer({ kind, haps, currentCycle, width, height, cycl
 
   if (kind === 'steps') {
     return [pad + renderSteps({ haps, currentCycle, width: inner, cyclesVisible })];
+  }
+
+  if (kind === 'wave') {
+    const data = analyserData(id);
+    // nothing has played through this analyser yet, or we are offline
+    if (!data) return [];
+    return renderWaveform({ data, width: inner, height: Math.min(height, 4) }).map((r) => pad + r);
   }
 
   // renderPianoRoll needs three rows before it will draw anything

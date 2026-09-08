@@ -173,7 +173,7 @@ const CURATED = {
   vib: 'vibrato rate',
   pw: 'pulse width, for the pulse oscillator',
   seed: 'fix the random seed so randomness repeats',
-  visualizer: 'draw a strip under this line: "roll" or "steps"',
+  visualizer: 'draw a strip under this line: "roll", "steps" or "wave"',
   label: 'tag events; browser only, no effect here',
   color: 'colour for visuals; browser only, no effect here',
 };

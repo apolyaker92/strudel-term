@@ -529,6 +529,7 @@ export class Tui {
       for (const call of visualizerCalls) {
         const rows = renderVisualizer({
           kind: call.kind,
+          id: call.id,
           haps: hapsFor(window, call),
           currentCycle: engine.currentCycle,
           width: width - (showScrollbar ? 1 : 0),

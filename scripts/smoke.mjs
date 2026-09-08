@@ -6,8 +6,7 @@ import { OfflineAudioContext } from 'node-web-audio-api';
 import { evalScope } from '@strudel/core';
 import { installFetchCache, DEFAULT_BANK } from '../src/samples.mjs';
 import * as sliders from '../src/sliders.mjs';
-import { installArp } from '../src/arp.mjs';
-import { installTransposeAliases } from '../src/aliases.mjs';
+import { installExtensions } from '../src/install.mjs';
 import { renderPianoRoll } from '../src/pianoroll.mjs';
 import { renderWaveform } from '../src/waveform.mjs';
 
@@ -16,8 +15,7 @@ const code = readFileSync(file, 'utf8');
 
 installFetchCache();
 sliders.attachCore(await import('@strudel/core'));
-installArp(await import('@strudel/core'));
-installTransposeAliases(await import('@strudel/core'));
+installExtensions(await import('@strudel/core'));
 await evalScope(
   import('@strudel/core'),
   import('@strudel/mini'),

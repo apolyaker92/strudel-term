@@ -15,8 +15,7 @@ import { writeAtomic } from '../src/atomic.mjs';
 import { OfflineAudioContext } from 'node-web-audio-api';
 import { evalScope } from '@strudel/core';
 import { installFetchCache, DEFAULT_BANK } from '../src/samples.mjs';
-import { installArp } from '../src/arp.mjs';
-import { installTransposeAliases } from '../src/aliases.mjs';
+import { installExtensions } from '../src/install.mjs';
 import * as sliders from '../src/sliders.mjs';
 import * as tracks from '../src/tracks.mjs';
 import { encodeWav } from '../src/wav.mjs';
@@ -81,8 +80,7 @@ if (seconds > 3600) die(`that would render ${Math.round(seconds)} seconds; use f
 installFetchCache();
 const core = await import('@strudel/core');
 sliders.attachCore(core);
-installArp(core);
-installTransposeAliases(core);
+installExtensions(core);
 await evalScope(
   import('@strudel/core'),
   import('@strudel/mini'),

@@ -166,6 +166,17 @@ export async function initAudio(latencyHint = null, options = {}) {
 
 // Latest time-domain block from the master tap, or null before audio starts.
 // The same buffer is reused each call; the renderer consumes it immediately.
+// Time-domain samples for one .analyze() id, used by the wave visualizer.
+// Null offline and before anything has played through that analyser.
+export function analyserData(id) {
+  if (silent || !dough) return null;
+  try {
+    return dough.getAnalyzerData?.('time', id) ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export function waveform() {
   if (silent) return null;
   if (!masterAnalyser || !waveBuffer) return null;

@@ -11,6 +11,7 @@ import { Engine } from '../src/engine.mjs';
 import { Tui, panelRows } from '../src/tui.mjs';
 import * as sliders from '../src/sliders.mjs';
 import * as tracks from '../src/tracks.mjs';
+import { initVocabulary, completionsFor } from '../src/complete.mjs';
 import { setBusEffect, setBusParam } from './audio-browser.mjs';
 import { initAudio, loadSampleBank } from './audio-browser.mjs';
 
@@ -47,6 +48,51 @@ const state = {
   selectedStart: null,
 };
 const tui = new Tui({ engine, state, editor });
+
+// Completion, the same flow cli.mjs runs: tab completes and cycles, and the
+// dropdown the Tui draws comes from state.hint.
+let completion = null;
+
+function handleTab() {
+  const cycling =
+    completion && completion.line === editor.line && editor.col === completion.endCol;
+
+  if (cycling) {
+    completion.index = (completion.index + 1) % completion.matches.length;
+  } else {
+    const found = completionsFor(editor.lines[editor.line] ?? '', editor.col);
+    if (!found.matches.length) {
+      completion = null;
+      editor.tab();
+      return;
+    }
+    completion = {
+      line: editor.line,
+      start: found.start,
+      matches: found.matches,
+      index: 0,
+      endCol: editor.col,
+    };
+  }
+
+  editor.replaceInLine(completion.start, completion.endCol, completion.matches[completion.index]);
+  completion.endCol = editor.col;
+}
+
+function refreshHint() {
+  if (state.mode !== 'insert') {
+    state.hint = null;
+    return;
+  }
+  if (completion) {
+    state.hint = { matches: completion.matches, index: completion.index, start: completion.start };
+    return;
+  }
+  const found = completionsFor(editor.lines[editor.line] ?? '', editor.col);
+  state.hint = found.matches.length
+    ? { matches: found.matches, index: 0, start: found.start }
+    : null;
+}
 
 let evalTimer = null;
 function scheduleEvaluate() {
@@ -183,7 +229,7 @@ function handleKey(key) {
   }
   if (ch === '\r') editor.insert('\n');
   else if (ch === '\x7f' || ch === '\b') editor.backspace();
-  else if (ch === '\t') editor.tab();
+  else if (ch === '\t') handleTab();
   else if (ch >= ' ') editor.insert(ch);
   else return;
   scheduleEvaluate();
@@ -198,8 +244,21 @@ term.onData((data) => {
       state.error = `key handler: ${err.message}`;
     }
   }
+  refreshHint();
 });
 window.addEventListener('resize', () => fit.fit());
+
+// Names come from the loaded modules, so completion tracks whatever is bundled.
+(async () => {
+  try {
+    const core = await import('@strudel/core');
+    const tonal = await import('@strudel/tonal');
+    const dough = await import('superdough');
+    await initVocabulary({ pattern: engine.pattern ?? core.silence, modules: [core, tonal], dough });
+  } catch (err) {
+    state.error = `completion unavailable: ${err.message}`;
+  }
+})();
 
 setInterval(() => tui.draw(), 33);
 tui.draw();

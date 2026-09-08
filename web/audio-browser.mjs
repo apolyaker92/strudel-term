@@ -73,6 +73,15 @@ export function trigger(value, time, duration) {
   }
 }
 
+export function analyserData(id) {
+  if (!dough) return null;
+  try {
+    return dough.getAnalyzerData?.('time', id) ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export function waveform() {
   if (!analyser || !waveBuffer) return null;
   try {

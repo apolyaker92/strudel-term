@@ -2593,10 +2593,45 @@ test('events are attributed by the range they came from', () => {
   assert.deepEqual(viz.hapsFor([inside, outside, straddling, bare], target), [inside]);
 });
 
+test('wave calls are numbered in source order, other kinds are not', () => {
+  viz.resetCache();
+  const found = viz.findVisualizers(
+    'stack(note("a").visualizer("wave"), note("b").visualizer("roll"), note("c").visualizer("wave"))',
+  );
+  assert.deepEqual(found.map((f) => f.kind), ['wave', 'roll', 'wave']);
+  assert.deepEqual(found.map((f) => f.id), ['viz0', null, 'viz1']);
+});
+
+await test('a wave visualizer attaches an analyser, other kinds do not', async () => {
+  // The transpiler turns a string argument into mini notation, so the method
+  // receives a Pattern rather than "wave". Comparing it to the string matched
+  // nothing and the whole kind silently did nothing.
+  const { Engine } = await import('../src/engine.mjs');
+
+  const wave = new Engine();
+  await wave.setCode('note("c3").sound("triangle").visualizer("wave")', { quiet: true });
+  const wavehap = wave.pattern.queryArc(0, 1).filter((h) => h.whole)[0];
+  assert.equal(wavehap.value.analyze, 'viz0');
+
+  const roll = new Engine();
+  await roll.setCode('note("c3").sound("triangle").visualizer("roll")', { quiet: true });
+  const rollhap = roll.pattern.queryArc(0, 1).filter((h) => h.whole)[0];
+  assert.equal(rollhap.value.analyze, undefined, 'roll stays inert');
+});
+
+test('a wave strip draws nothing until audio has passed through it', () => {
+  // offline, and before anything has played, there is no analyser to read
+  assert.deepEqual(
+    viz.renderVisualizer({ kind: 'wave', id: 'viz0', haps: [], currentCycle: 0, width: 80, height: 4 }),
+    [],
+  );
+});
+
 test('each kind knows its height before anything is rendered', () => {
   // the pane has to size itself before the strips exist
   assert.equal(viz.heightOf('steps'), 1);
   assert.equal(viz.heightOf('roll'), 5);
+  assert.equal(viz.heightOf('wave'), 4);
 });
 
 test('a strip is rendered at the height it claimed', () => {

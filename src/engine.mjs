@@ -3,9 +3,8 @@ import { initAudio, audioTime, trigger, deviceLooksDead } from './audio.mjs';
 import * as sliders from './sliders.mjs';
 import * as tracks from './tracks.mjs';
 import { densityFor, pageFor, PAGE_CYCLES } from './timeline.mjs';
-import { installArp } from './arp.mjs';
-import { installTransposeAliases } from './aliases.mjs';
-import { installVisualizer } from './visualizers.mjs';
+import { installExtensions } from './install.mjs';
+import { resetWaveIds } from './visualizers.mjs';
 
 let scopeReady = null;
 
@@ -13,13 +12,7 @@ async function ensureScope() {
   scopeReady ??= (async () => {
     const core = await import('@strudel/core');
     sliders.attachCore(core);
-    // replaces core's arp, which throws inside the query in 1.2.6
-    installArp(core);
-    // and the two transposes, which are inert controls in this version
-    installTransposeAliases(core);
-    // .visualizer() has to exist for the code to evaluate; it returns the
-    // pattern untouched and the drawing is worked out from the source
-    installVisualizer(core);
+    installExtensions(core);
     await evalScope(
       import('@strudel/core'),
       import('@strudel/mini'),
@@ -186,6 +179,10 @@ export class Engine {
       } catch {
         // a buffer that will not transpile has no sliders to prepare
       }
+
+      // wave visualizers take an analyser id each as they evaluate, and the
+      // source scan numbers them the same way, so the count starts clean
+      resetWaveIds();
 
       // emitMiniLocations tags each event with the source that produced it,
       // which is what lets a note in the roll be edited back into the code

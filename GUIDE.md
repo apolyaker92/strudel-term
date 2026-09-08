@@ -142,13 +142,20 @@ note("<a1 f1 c2 g1>").sound("sawtooth").visualizer("steps")
 ```
 
 `roll` is a five row piano roll, `steps` a single row marking where the onsets
-fall in the cycle. `roll` is the default if you pass nothing.
+fall in the cycle, and `wave` an oscilloscope of that pattern alone rather than
+of the whole mix. `roll` is the default if you pass nothing.
 
-It changes nothing about the sound. The method returns the pattern it was given
-untouched, and the drawing is worked out from the source: the call is found by
-parsing the file, and events belong to it when the mini-notation they came from
-sits inside the expression the call is chained onto. So the same events reach
-the speakers in the same order whether the call is there or not.
+`roll` and `steps` change nothing at all. The method returns the pattern it was
+given untouched, and the drawing is worked out from the source: the call is
+found by parsing the file, and events belong to it when the mini-notation they
+came from sits inside the expression the call is chained onto. The same events
+reach the speakers in the same order whether the call is there or not.
+
+`wave` is the exception, and it has to be. There is nothing to draw unless that
+pattern's audio reaches an analyser, so this one attaches `.analyze()`, which
+taps the signal rather than changing it. An offline render ignores analysers
+entirely, so a bounce sounds the same either way. It also needs to have heard
+something: the strip is blank until the pattern has played a note.
 
 The roll here is for looking at, not editing. Note mode still works on the code
 itself, with `ctrl-e`.

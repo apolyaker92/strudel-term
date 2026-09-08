@@ -32,4 +32,5 @@ stack(
   note("c4 [eb4 c5] [g4 eb4] c5 ~ bb4 g4")
     .sound("triangle")
     .gain(0.2)
+    .visualizer("roll")
 )
