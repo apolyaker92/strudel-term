@@ -1,4 +1,4 @@
-<img src="docs/icon.png" alt="" width="128" align="right">
+<p align="center"><img src="docs/icon.png" alt="" width="128"></p>
 
 # strudel-term
 
